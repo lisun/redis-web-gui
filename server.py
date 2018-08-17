@@ -32,7 +32,7 @@ class RedisMonitor:
     Monitor Redis keys and send updates to all web socket clients.
     """
 
-    def __init__(self, host="localhost", port=6379, db=0, refresh_rate=0.5, realtime=False):
+    def __init__(self, host="localhost", port=6379, db=0, refresh_rate=0.5, realtime=False, password=None):
         """
         If realtime is specified, RedisMonitor will enable notifications for all
         set events and subscribe to these notifications.
@@ -43,8 +43,9 @@ class RedisMonitor:
         self.db = db
         self.refresh_rate = refresh_rate
         self.realtime = realtime
+        self.password = password
 
-        self.redis_db = redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=True)
+        self.redis_db = redis.Redis(host=self.host, port=self.port, db=self.db, decode_responses=True, password=self.password)
         self.message_last = {}
 
         if self.realtime:
@@ -251,6 +252,7 @@ if __name__ == "__main__":
     parser.add_argument("-wp", "--ws_port", help="WebSocket port (default: 8001)", default=8001, type=int)
     parser.add_argument("-rh", "--redis_host", help="Redis hostname (default: localhost)", default="localhost")
     parser.add_argument("-rp", "--redis_port", help="Redis port (default: 6379)", default=6379, type=int)
+    parser.add_argument("-pwd", "--redis_password", help="Redis password (default: None)", default=None)
     parser.add_argument("-rd", "--redis_db", help="Redis database number (default: 0)", default=0, type=int)
     parser.add_argument("-r", "--refresh_rate", help="Redis refresh rate in seconds (default: 0.5)", default=0.5, type=float)
     parser.add_argument("--realtime", action="store_true", help="Subscribe to realtime Redis SET pubsub notifications")
@@ -258,7 +260,7 @@ if __name__ == "__main__":
 
     # Create RedisMonitor, HTTPServer, and WebSocketServer
     print("Starting up server...\n")
-    redis_monitor = RedisMonitor(host=args.redis_host, port=args.redis_port, db=args.redis_db, refresh_rate=args.refresh_rate, realtime=args.realtime)
+    redis_monitor = RedisMonitor(host=args.redis_host, port=args.redis_port, db=args.redis_db, refresh_rate=args.refresh_rate, realtime=args.realtime, password=args.redis_password)
     print("Connected to Redis database at %s:%d (db %d)" % (args.redis_host, args.redis_port, args.redis_db))
     get_post_args = {"ws_port": args.ws_port, "redis_db": redis_monitor.redis_db}
     http_server = HTTPServer(("", args.http_port), makeHTTPRequestHandler(handle_get_request, handle_post_request, get_post_args))
